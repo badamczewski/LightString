@@ -108,7 +108,7 @@ namespace LightString
         /// </summary>
         /// <param name="str">this string.</param>
         /// <returns></returns>
-        static string ReverseInPlace(this string str)
+        public static string ReverseInPlace(this string str)
         {
             if (str == null)
                 return null;
