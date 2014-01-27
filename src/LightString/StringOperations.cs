@@ -102,5 +102,33 @@ namespace LightString
                 }
             }
         }
+
+        /// <summary>
+        /// Returns a reference of this System.String reversed.
+        /// </summary>
+        /// <param name="str">this string.</param>
+        /// <returns></returns>
+        static string ReverseInPlace(this string str)
+        {
+            if (str == null)
+                return null;
+
+            unsafe
+            {
+                fixed (char* c = str)
+                {
+                    char* p = c;
+                    char* q = c + str.Length - 1;
+                    for (; p < q; ++p, --q)
+                    {
+                        char t = *p;
+                        *p = *q;
+                        *q = t;
+                    }
+                }
+            }
+
+            return str;
+        }
     }
 }
