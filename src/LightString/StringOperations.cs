@@ -163,5 +163,64 @@ namespace LightString
 
             return str;
         }
+
+        unsafe private static string ResizeString(string str, int newLength)
+        {
+            if (str == null)
+                throw new ArgumentNullException();
+
+            fixed (char* c = str)
+            {
+                int* ptr = (int*)c;
+
+                if (newLength > ptr[-1])
+                    throw new ArgumentException(string.Format("Argument cannot exceed actual lenght of string: {0}", ptr[-1]), "newLength");
+
+                ptr[-1] = (int)newLength;
+                c[newLength] = PointerEnd;
+            }
+
+            return str;
+        }
+
+        /// <summary>
+        /// Replaces two or more whitespaces with single whitespace.
+        /// </summary>
+        /// <param name="str">String to trim</param>
+        /// <returns>Trimmed string</returns>
+        public static string TrimAllInPlace(this string str)
+        {
+            if (str == null)
+                return null;
+
+            unsafe
+            {
+                fixed (char* c = str)
+                {
+                    char* p = c;
+                    char* curr = c;
+                    int spaceCount = 1; //trim all on the begining
+
+                    for (; p < c + str.Length; ++p)
+                    {
+                        spaceCount = char.IsWhiteSpace(*p) ? spaceCount + 1 : 0;
+
+                        if (spaceCount <= 1)
+                            *(curr++) = *p;
+                    }
+
+                    long newLength = curr - c;
+
+                    if (newLength > 0 && char.IsWhiteSpace(curr[-1]))
+                        newLength--; //last char is space - trim them all!
+
+                    ResizeString(str, (int)newLength);
+                }
+            }
+
+            return str;
+
+        }
+
     }
 }
