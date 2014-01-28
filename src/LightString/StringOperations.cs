@@ -38,7 +38,6 @@ namespace LightString
     /// </summary>
     public static class StringOperations
     {
-        public const int WhiteSpace = 32;
         public const char PointerEnd = '\0';
 
         /// <summary>
@@ -77,27 +76,69 @@ namespace LightString
                 {
                     char* start = c;
                     char* end;
-                    uint cnt = 0;
 
                     for (; *start != 0; start++)
                     {
-                        if (*start != WhiteSpace) break;
-                        cnt++;
+                        if (char.IsWhiteSpace(*start) == false) break;
                     }
 
                     //End
                     if (*start != 0)
                     {
-                        end = start + (str.Length - 1 - cnt);
+                        end = c + (str.Length - 1);
                         for (; end > c; end--)
                         {
-                            if (*end != WhiteSpace) break;                           
+                            if (char.IsWhiteSpace(*end)) break;                           
                         }
 
                         *(end + 1) = PointerEnd;
                     }
 
                     return new string(start);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes all leading and trailing white-space characters from the current System.String object,
+        /// using pointer arthmetic and returns a reference to that string.
+        /// </summary>
+        /// <param name="str">this string.</param>
+        /// <returns></returns>
+        public static string UnsafeTrimInPlace(this string str)
+        {
+            unsafe
+            {
+                fixed (char* c = str)
+                {
+                    char* start = c;
+                    char* curr = c;
+                    bool wasSpace = false;
+                    int cnt = 0;
+
+                    for (; *start != 0; start++)
+                    {
+                        if (char.IsWhiteSpace(*start) == true)
+                        {
+                            if (wasSpace)
+                            {
+                                *(curr) = *start;
+                                curr++;
+                                cnt++;
+                            }
+                        }
+                        else
+                        {
+                            wasSpace = true;
+                            *(curr) = *start;
+                            curr++;
+                            cnt++;
+                        }
+                    }
+
+                    UnsafeResizeStringInPlace(str, cnt - 1);
+
+                    return str;
                 }
             }
         }
@@ -164,7 +205,7 @@ namespace LightString
             return str;
         }
 
-        unsafe private static string ResizeString(string str, int newLength)
+        unsafe private static string UnsafeResizeStringInPlace(string str, int newLength)
         {
             if (str == null)
                 throw new ArgumentNullException();
@@ -188,7 +229,7 @@ namespace LightString
         /// </summary>
         /// <param name="str">String to trim</param>
         /// <returns>Trimmed string</returns>
-        public static string TrimAllInPlace(this string str)
+        public static string UnsafeTrimMiddleAllInPlace(this string str)
         {
             if (str == null)
                 return null;
@@ -214,7 +255,7 @@ namespace LightString
                     if (newLength > 0 && char.IsWhiteSpace(curr[-1]))
                         newLength--; //last char is space - trim them all!
 
-                    ResizeString(str, (int)newLength);
+                    UnsafeResizeStringInPlace(str, (int)newLength);
                 }
             }
 
