@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using LightString.Common;
 
 namespace LightString
 {
@@ -46,7 +47,7 @@ namespace LightString
         /// </summary>
         /// <param name="str">this string.</param>
         /// <returns></returns>
-        public static string ToUpperInPlace(this string str)
+        public static string UnsafeToUpperInPlace(this string str)
         {
             unsafe
             {
@@ -68,17 +69,15 @@ namespace LightString
         /// </summary>
         /// <param name="str">this string.</param>
         /// <returns></returns>
-        public static string FastTrim(this string str)
+        public static string UnsafeTrimInPlaceWithCopy(this string str)
         {
             unsafe
             {
                 fixed (char* c = str)
                 {
-                    char* start;
+                    char* start = c;
                     char* end;
                     uint cnt = 0;
-
-                    start = c;
 
                     for (; *start != 0; start++)
                     {
@@ -104,11 +103,45 @@ namespace LightString
         }
 
         /// <summary>
+        // Returns a string array that contains the substrings in this string that are
+        // delimited by element of a specified Unicode character.
+        /// </summary>
+        /// <param name="str">this string.</param>
+        /// <param name="sep">character separator.</param>
+        /// <returns></returns>
+        public static Split UnsafeSplitInPlaceWithCopy(this string str, char sep)
+        {
+            unsafe
+            {
+                List<int> indexes = new List<int>() { 0 };
+
+                fixed (char* c = str)
+                {
+                    char* start = c;
+                    int cnt = 0;
+
+                    for (; *start != 0; start++)
+                    {
+                        if (*start == sep)
+                        {
+                            indexes.Add(cnt);
+                        }
+
+                        cnt++;
+                    }
+                }
+
+                indexes.Add(str.Length - 1);
+
+                return new Split(indexes, str);
+            }
+        }
+
         /// Returns a reference of this System.String reversed.
         /// </summary>
         /// <param name="str">this string.</param>
         /// <returns></returns>
-        public static string ReverseInPlace(this string str)
+        public static string UnsafeReverseInPlace(this string str)
         {
             if (str == null)
                 return null;
