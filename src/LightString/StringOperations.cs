@@ -263,5 +263,39 @@ namespace LightString
 
         }
 
+        /// <summary>
+        /// Sorts characters in a string in O(N) time, where N is length of the string.
+        /// </summary>
+        /// <param name="str">Input string</param>
+        /// <returns>String with characters ordered</returns>
+        public static string UnsafeRadixSortInPlace(this string str)
+        {
+            if (str == null)
+                return null;
+
+            int[] counts = new int[char.MaxValue];
+
+            unsafe
+            {
+                fixed (char* c = str)
+                {
+                    char* p = c;
+                    for(; p < c + str.Length; ++p)
+                        counts[(int)*p]++;
+
+                    p = c;
+                    for(int i = 0; i < counts.Length; ++i)
+                    {
+                        int k = counts[i];
+                        while(k-- > 0)
+                            *(p++) = (char)i;
+                    }
+                }
+            }
+
+            return str;
+
+        }
+
     }
 }
