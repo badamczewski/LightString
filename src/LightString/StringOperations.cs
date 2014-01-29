@@ -114,7 +114,6 @@ namespace LightString
                     char* start = c;
                     char* curr = c;
                     bool wasSpace = false;
-                    int cnt = 0;
 
                     for (; *start != 0; start++)
                     {
@@ -124,7 +123,6 @@ namespace LightString
                             {
                                 *(curr) = *start;
                                 curr++;
-                                cnt++;
                             }
                         }
                         else
@@ -132,11 +130,10 @@ namespace LightString
                             wasSpace = true;
                             *(curr) = *start;
                             curr++;
-                            cnt++;
                         }
                     }
 
-                    UnsafeResizeStringInPlace(str, cnt - 1);
+                    UnsafeResizeStringInPlace(str, (int)(curr - c - -1));
 
                     return str;
                 }
@@ -205,25 +202,6 @@ namespace LightString
             return str;
         }
 
-        unsafe private static string UnsafeResizeStringInPlace(string str, int newLength)
-        {
-            if (str == null)
-                throw new ArgumentNullException();
-
-            fixed (char* c = str)
-            {
-                int* ptr = (int*)c;
-
-                if (newLength > ptr[-1])
-                    throw new ArgumentException(string.Format("Argument cannot exceed actual lenght of string: {0}", ptr[-1]), "newLength");
-
-                ptr[-1] = (int)newLength;
-                c[newLength] = PointerEnd;
-            }
-
-            return str;
-        }
-
         /// <summary>
         /// Replaces two or more whitespaces with single whitespace.
         /// </summary>
@@ -261,6 +239,25 @@ namespace LightString
 
             return str;
 
+        }
+
+        unsafe private static string UnsafeResizeStringInPlace(string str, int newLength)
+        {
+            if (str == null)
+                throw new ArgumentNullException();
+
+            fixed (char* c = str)
+            {
+                int* ptr = (int*)c;
+
+                if (newLength > ptr[-1])
+                    throw new ArgumentException(string.Format("Argument cannot exceed actual lenght of string: {0}", ptr[-1]), "newLength");
+
+                ptr[-1] = newLength;
+                c[newLength] = PointerEnd;
+            }
+
+            return str;
         }
 
     }
