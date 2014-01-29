@@ -6,4 +6,4 @@ This is a library that aims to bring a fast and low allocation (very little gen0
 
 Although Light String is based mostly on system string (and a few other custom string types) it changes the way that strings work so you need to know what are you doing and renember that from now on every string based action can have consequencess.
 
-The githy details will be provided in documentation wiki later.
+The details will be provided in documentation wiki later.
