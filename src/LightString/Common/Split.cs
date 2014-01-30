@@ -55,12 +55,12 @@ namespace LightString.Common
                     char* start = c;
                     start += indexes[position];
 
-                    if (*start == StringOperations.PointerEnd)
+                    if (*start == MutableString.PointerEnd)
                         start++;
 
                     char* end = c + indexes[position + 1] - 1;
 
-                    *(end + 1) = StringOperations.PointerEnd;
+                    *(end + 1) = MutableString.PointerEnd;
 
                     return new string(start);
                 }
