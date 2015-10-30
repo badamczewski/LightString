@@ -35,16 +35,45 @@ namespace LightString.Common
     /// </summary>
     public class Split
     {
-        private List<int> indexes;
         private string str;
 
-        public Split(List<int> indexes, string str)
+        private int capacity;
+        private int[] indexes;
+        private int idx;
+
+        internal void Add(int index)
         {
-            this.indexes = indexes;
-            this.str = str;
+            bool doExpand = idx == capacity;
+
+            if (doExpand)
+                Expand();
+
+            indexes[idx++] = index;
         }
 
-        public int Count { get { return indexes.Count - 1; } }
+
+
+        private void Expand()
+        {
+            capacity = capacity * 2;
+            int[] newArray = new int[capacity];
+
+            Buffer.BlockCopy(indexes, 0, newArray, 0, indexes.Length);
+
+            indexes = newArray;
+        }
+
+        public Split(string str)
+        {  
+            this.capacity = 16;
+            this.indexes = new int[capacity];
+            
+            this.idx = 0;
+            this.str = str;
+
+        }
+
+        public int Count { get { return idx == 2 ? 0 : idx - 1; } }
 
         public string UnsafeGetStringWithCopy(int position)
         {
@@ -53,7 +82,7 @@ namespace LightString.Common
                 fixed (char* c = str)
                 {
                     char* start = c;
-                    start += indexes[position];
+                    start += indexes[position] + 1;
 
                     if (*start == MutableString.PointerEnd)
                         start++;

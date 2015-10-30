@@ -44,12 +44,27 @@ namespace LightString
             this.str = str;
         }
 
+        public string Value 
+        { 
+            get { return str; } 
+        }  
+
+        public static implicit operator string(MutableString @this)
+        {
+            return @this.str;
+        }
+
+        public static implicit operator MutableString(string @this)
+        {
+            return @this.Mutate();
+        }
+
         /// <summary>
         /// Returns a reference of this System.String converted to uppercase, using the casing
         //  rules of the current culture.
         /// </summary>
         /// <returns></returns>
-        public MutableString UnsafeToUpperInPlace()
+        public MutableString ToUpperInPlace()
         {
             unsafe
             {
@@ -66,11 +81,32 @@ namespace LightString
         }
 
         /// <summary>
+        /// Returns a reference of this System.String converted to lowercase, using the casing
+        //  rules of the current culture.
+        /// </summary>
+        /// <returns></returns>
+        public MutableString ToLowerInPlace()
+        {
+            unsafe
+            {
+                fixed (char* c = str)
+                {
+                    for (char* p = c; *p != 0; p++)
+                    {
+                        *p = char.ToLower(*p);
+                    }
+                }
+            }
+
+            return this;
+        }
+
+        /// <summary>
         /// Removes all leading and trailing white-space characters from the current System.String object,
         /// using pointer arthmetic and returns a copy of the string.
         /// </summary>
         /// <returns></returns>
-        public MutableString UnsafeTrimInPlaceWithCopy()
+        public MutableString TrimInPlaceWithCopy()
         {
             unsafe
             {
@@ -109,7 +145,7 @@ namespace LightString
         /// using pointer arthmetic and returns a reference to that string.
         /// </summary>
         /// <returns></returns>
-        public MutableString UnsafeTrimInPlace()
+        public MutableString TrimInPlace()
         {
             unsafe
             {
@@ -154,7 +190,7 @@ namespace LightString
                     }
 
                     int len = str.Length - (int)(curr - tailingSpace - 1) - (int)(leadingSpace - c);
-                    UnsafeResizeStringInPlace(str, len);
+                    ResizeStringInPlace(str, len);
 
                     return this;
                 }
@@ -167,11 +203,12 @@ namespace LightString
         /// </summary>
         /// <param name="sep">character separator.</param>
         /// <returns></returns>
-        public Split UnsafeSplitInPlaceWithCopy(char sep)
+        public Split SplitInPlace(char sep)
         {
             unsafe
             {
-                List<int> indexes = new List<int>() { 0 };
+                var split = new Split(str);
+                split.Add(-1);
 
                 fixed (char* c = str)
                 {
@@ -182,28 +219,69 @@ namespace LightString
                     {
                         if (*start == sep)
                         {
-                            indexes.Add(cnt);
+                            split.Add(cnt);
                         }
 
                         cnt++;
                     }
                 }
 
-                indexes.Add(str.Length - 1);
-
-                return new Split(indexes, str);
+                split.Add(str.Length);
+                
+                return split;
             }
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of a specified Unicode character in this instance
+        /// with another specified Unicode character.
+        /// </summary>
+        /// <param name="newChar"></param>
+        /// <param name="oldChar"></param>
+        /// <returns></returns>
+        public MutableString ReplaceInPlace(char oldChar, char newChar)
+        {
+            unsafe
+            {
+                fixed (char* c = str)
+                {
+                    for (char* p = c; *p != 0; p++)
+                    {
+                        if (*p == oldChar)
+                            *p = newChar;
+                    }
+                }
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Retrieves a substring from this instance. The substring starts at a specified
+        /// character position and returns a copy of the string.
+        /// </summary>
+        /// <param name="startIndex"></param>
+        /// <returns></returns>
+        public MutableString SubstringInPlaceWithCopy(int startIndex)
+        {
+            unsafe
+            {
+                fixed (char* c = str)
+                {
+                    char* p = c + startIndex;
+                    str = new string(p);
+                }
+            }
+
+            return this;
         }
 
         /// <summary>
         /// Returns a reference of this System.String reversed.
         /// </summary>
         /// <returns></returns>
-        public MutableString UnsafeReverseInPlace()
+        public MutableString ReverseInPlace()
         {
-            if (str == null)
-                return null;
-
             unsafe
             {
                 fixed (char* c = str)
@@ -226,11 +304,8 @@ namespace LightString
         /// Replaces two or more whitespaces with single whitespace.
         /// </summary>
         /// <returns>Trimmed string</returns>
-        public MutableString UnsafeTrimMiddleAllInPlace()
+        public MutableString TrimMiddleAllInPlace()
         {
-            if (str == null)
-                return null;
-
             unsafe
             {
                 fixed (char* c = str)
@@ -252,7 +327,7 @@ namespace LightString
                     if (newLength > 0 && char.IsWhiteSpace(curr[-1]))
                         newLength--; //last char is space - trim them all!
 
-                    UnsafeResizeStringInPlace(str, (int)newLength);
+                    ResizeStringInPlace(str, (int)newLength);
                 }
             }
 
@@ -260,34 +335,12 @@ namespace LightString
 
         }
 
-        unsafe private string UnsafeResizeStringInPlace(string str, int newLength)
-        {
-            if (str == null)
-                throw new ArgumentNullException();
-
-            fixed (char* c = str)
-            {
-                int* ptr = (int*)c;
-
-                if (newLength > ptr[-1])
-                    throw new ArgumentException(string.Format("Argument cannot exceed actual lenght of string: {0}", ptr[-1]), "newLength");
-
-                ptr[-1] = newLength;
-                c[newLength] = PointerEnd;
-            }
-
-            return str;
-        }
-
         /// <summary>
         /// Sorts characters in a string in O(N) time, where N is length of the string.
         /// </summary>
         /// <returns>String with characters ordered</returns>
-        public MutableString UnsafeRadixSortInPlace()
+        public MutableString RadixSortInPlace()
         {
-            if (str == null)
-                return null;
-
             int[] counts = new int[char.MaxValue];
 
             unsafe
@@ -310,5 +363,25 @@ namespace LightString
 
             return this;
         }
+
+        unsafe private string ResizeStringInPlace(string str, int newLength)
+        {
+            if (str == null)
+                throw new ArgumentNullException();
+
+            fixed (char* c = str)
+            {
+                int* ptr = (int*)c;
+
+                if (newLength > ptr[-1])
+                    throw new ArgumentException(string.Format("Argument cannot exceed actual lenght of string: {0}", ptr[-1]), "newLength");
+
+                ptr[-1] = newLength;
+                c[newLength] = PointerEnd;
+            }
+
+            return str;
+        }
+
     }
 }
